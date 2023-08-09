@@ -19,7 +19,7 @@ def compute_non_alpha_ratio(text):
     if len(all_words) == 0: 
         return 0
     # Calcula y retorna el ratio
-    return len(words_with_non_alpha) / len(all_words)
+    return len(words_with_non_alpha) / len(all_words), len(all_words)
 
 # Carga los modelo de lenguaje
 try:
@@ -47,20 +47,20 @@ def compute_legible_ratio(text, nlp):
     # Cálculo del ratio de palabras legibles
     legible_ratio = legible_count / len(doc)
 
-    return legible_ratio
+    return legible_ratio, len(doc)
 
 
 # # Ejemplo de texto de entrada en español
 # text = "Esto es un texto de ejemplo con algunas paabras mal escr\itas."
 
 def compute_document(text):
-    legible_ratio_es = compute_legible_ratio(text, nlp_es)
+    legible_ratio_es, detected_legible = compute_legible_ratio(text, nlp_es)
     
     # print(f"Ratio de palabras reconocidas: {legible_ratio_es}")
     
     # Cálculo del ratio de palabras con caracteres no alfabéticos
-    non_alpha_ratio = compute_non_alpha_ratio(text)
+    non_alpha_ratio, detected_alpha = compute_non_alpha_ratio(text)
 
     # print(f"Ratio de palabas con carácteres no alfanúmericos: {non_alpha_ratio}")
 
-    return legible_ratio_es, non_alpha_ratio
+    return legible_ratio_es, detected_legible, non_alpha_ratio, detected_alpha

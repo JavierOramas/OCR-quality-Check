@@ -25,8 +25,8 @@ app = Typer()
 
 def process_single_pdf(pdf_path:str):
     ocr_result = get_ocr(pdf_path)
-    legible_ratio_es, non_alpha_ratio = compute_document(ocr_result)
-    return legible_ratio_es, non_alpha_ratio
+    legible_ratio_es, detected_legible, non_alpha_ratio, detected_alpha = compute_document(ocr_result)
+    return legible_ratio_es, detected_legible, non_alpha_ratio, detected_alpha
 @timeit
 def process_pdf_files(path):
     data = {}
@@ -42,8 +42,8 @@ def process_pdf_files(path):
 
                 for pdf_path, future in futures:
                     try:
-                        legible_ratio_es, non_alpha_ratio = future.result()
-                        data[pdf_path] = {"legible_ratio_es": legible_ratio_es, "non_alpha_ratio": non_alpha_ratio}
+                        legible_ratio_es, detected_legible, non_alpha_ratio, detected_alpha = future.result()
+                        data[pdf_path] = {"legible_ratio_es": legible_ratio_es, "non_alpha_ratio": non_alpha_ratio, "detected_characters_legible": detected_legible, "detected_characters_alpha": detected_alpha}
                         pbar.update(1)
                     except Exception as e:
                         print(f"Error processing {pdf_path}: {e}")

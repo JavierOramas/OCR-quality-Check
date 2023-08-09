@@ -15,6 +15,8 @@ def generate_excel_summary(raw_report_data, excel_file_path="summary.xlsx", acce
     for path, info in raw_report_data.items():
         legible_ratio = info['legible_ratio_es']  
         alpha_ratio = info['non_alpha_ratio']
+        detected_characters_legible = info['detected_characters_legible']
+        detected_characters_alpha = info['detected_characters_alpha']
 
         # Check and update the summary count
         if legible_ratio < 0.2:
@@ -39,7 +41,7 @@ def generate_excel_summary(raw_report_data, excel_file_path="summary.xlsx", acce
         else:
             summary_counts_alphanumerical['80>'] += 1
 
-        record = {'path': path, 'legible_characters': legible_ratio, 'alphanumerical_characters': alpha_ratio}
+        record = {'path': path, 'legible_characters': legible_ratio, 'alphanumerical_characters': alpha_ratio, "detected_characters_legible": detected_characters_legible, "detected_characters_alpha": detected_characters_alpha}
         if legible_ratio > acceptable_ratio:
             good_legibility_records.append(record)
         else:
