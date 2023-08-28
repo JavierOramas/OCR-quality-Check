@@ -29,8 +29,8 @@ def process_pdf_files(path):
                         futures.append((pdf_path, future))
 
                 for pdf_path, future in futures:
-                    legible_ratio_es, detected_legible, non_alpha_ratio, detected_alpha, detected_entities = future.result()
                     try:
+                        legible_ratio_es, detected_legible, non_alpha_ratio, detected_alpha, detected_entities = future.result()
                         data[pdf_path] = {"legible_ratio_es": legible_ratio_es, 
                                           "non_alpha_ratio": non_alpha_ratio, 
                                           "detected_words_legible": detected_legible, 
