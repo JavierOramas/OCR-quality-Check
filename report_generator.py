@@ -1,13 +1,10 @@
 import pandas as pd
 from openpyxl import Workbook
 
-def generate_excel_summary(raw_report_data, excel_file_path="summary.xlsx", acceptable_ratio=0.2):
+def generate_excel_summary(raw_report_data, excel_file_path="summary.xlsx"):
 
     # Convert JSON data to a list of dictionaries
-    good_legibility_records = []
-    bad_legibility_records = []
-    good_alphanumerical_records = []
-    bad_alphanumerical_records = []
+    records = []
     
     summary_counts_legibility = {'< 20': 0, '20-40': 0, '40-60': 0, '60-80': 0, '80>': 0}
     summary_counts_alphanumerical = {'< 20': 0, '20-40': 0, '40-60': 0, '60-80': 0, '80>': 0}
@@ -15,8 +12,9 @@ def generate_excel_summary(raw_report_data, excel_file_path="summary.xlsx", acce
     for path, info in raw_report_data.items():
         legible_ratio = info['legible_ratio_es']  
         alpha_ratio = info['non_alpha_ratio']
-        detected_characters_legible = info['detected_characters_legible']
-        detected_characters_alpha = info['detected_characters_alpha']
+        detected_words_legible = info['detected_words_legible']
+        detected_words_alpha = info['detected_words_alpha']
+        detected_entities = info['detected_entities']
 
         # Check and update the summary count
         if legible_ratio < 0.2:
@@ -41,36 +39,27 @@ def generate_excel_summary(raw_report_data, excel_file_path="summary.xlsx", acce
         else:
             summary_counts_alphanumerical['80>'] += 1
 
-        record = {'path': path, 'legible_characters': legible_ratio, 'alphanumerical_characters': alpha_ratio, "detected_characters_legible": detected_characters_legible, "detected_characters_alpha": detected_characters_alpha}
-        if legible_ratio > acceptable_ratio:
-            good_legibility_records.append(record)
-        else:
-            bad_legibility_records.append(record)
-        if alpha_ratio > acceptable_ratio:
-            good_alphanumerical_records.append(record)
-        else:
-            bad_alphanumerical_records.append(record)
+        record = {'ruta': path, 
+                  'palabras legibles': legible_ratio, 
+                  'palabras legibles no alfanuméricas': alpha_ratio, 
+                  "conteo legible": detected_words_legible, 
+                  "conteo no alfanumerico": detected_words_alpha,
+                  "entidades detectades": detected_entities
+                  }
+        records.append(record)
         
     # Create DataFrames from the list of dictionaries
-    df = pd.DataFrame(good_legibility_records)
-    df_bad = pd.DataFrame(bad_legibility_records)
-    df_summary = pd.DataFrame.from_dict(summary_counts_legibility, orient='index', columns=['Count'])
-
+    df = pd.DataFrame(records)
+    df_summary = pd.DataFrame.from_dict(summary_counts_legibility, orient='index', columns=['Counteo Legible'])
+    df_summary['Counteo No alanumerico'] = list(summary_counts_alphanumerical.values())
     
-    df2 = pd.DataFrame(good_alphanumerical_records)
-    df2_bad = pd.DataFrame(bad_alphanumerical_records)
-    
-    df2_summary = pd.DataFrame.from_dict(summary_counts_alphanumerical, orient='index', columns=['Count'])
-
     print(excel_file_path)
+    
     # Export DataFrames to separate sheets in the Excel file
     with pd.ExcelWriter(excel_file_path) as writer:
-        df_summary.to_excel(writer, sheet_name='Reporte de Legibilidad')
-        df.to_excel(writer, sheet_name='Buena Legibilidad', index=False)
-        df_bad.to_excel(writer, sheet_name='Mala Legibilidad', index=False)
-        df2_summary.to_excel(writer, sheet_name='Reporte Alfanumerico')
-        df2.to_excel(writer, sheet_name='Buenos Alfanumerico', index=False)
-        df2_bad.to_excel(writer, sheet_name='Malos Alfanumerico', index=False)
+        df_summary.to_excel(writer, sheet_name='Resumen')
+        df.to_excel(writer, sheet_name='Detalles', index=False)
+
 
 if __name__ == "__main__":
     json_file_path = "input.json"  # Replace with the actual path of your JSON file
