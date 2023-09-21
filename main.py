@@ -3,8 +3,9 @@ from typer import Typer, Argument, Option
 import os
 from pdf_handler import get_ocr
 from ocr_quality_check import compute_document
-import concurrent
+import concurrent.futures
 from report_generator import generate_excel_summary
+import json
 
 from functools import wraps
 import time
@@ -46,6 +47,9 @@ def process_pdf_files(path):
 def process_folder(path=Argument(default=".", help="Ruta de la carpeta")):
     
     data = process_pdf_files(path)
+    with open(os.path.join(path,'datos.json'), 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+
     print("Procesado terminado, generando reporte")
     generate_excel_summary(data, excel_file_path=os.path.join(path, "summary.xlsx"))
 

@@ -1,18 +1,18 @@
-import PyPDF2
 import logging
+from tika import parser
 
-logger = logging.getLogger("PyPDF2")
+logger = logging.getLogger("tika")
 logger.setLevel(logging.ERROR)
-# Function to extract text from a PDF using PyPDF2
-def extract_text_from_pdf(pdf_path):
-    pdf_text = ""
-    with open(pdf_path, "rb") as file:
-        pdf_reader = PyPDF2.PdfReader(file)
 
-        for page in pdf_reader.pages:
-            pdf_text += page.extract_text()
-    # print("PDF_TEXT", pdf_text)
-    return pdf_text
+def extract_text_from_pdf(file_path):
+    # Parse the document
+    parsed_data = parser.from_file(file_path)
+
+    # Extract text from parsed data
+    content = parsed_data.get('content')
+    text = content.strip() if content else ""
+   
+    return text.replace('\n', ' ').replace('\r', '').replace('\t', '').strip()
 
 # # Function to perform OCR on extracted text using pytesseract
 # def perform_ocr(text):
@@ -23,7 +23,7 @@ def extract_text_from_pdf(pdf_path):
 def get_ocr(pdf_file_path):
     # Step 1: Extract text from the PDF
     extracted_text = extract_text_from_pdf(pdf_file_path)
-
+   
     # Step 2: Perform OCR on the extracted text
     # ocr_result = perform_ocr(extracted_text)
 
@@ -31,3 +31,7 @@ def get_ocr(pdf_file_path):
     # print(extracted_text)
     
     return extracted_text
+
+if __name__ == "__main__":
+    text = extract_text_from_pdf('notas IBERO/IBNP2017102501.pdf')
+    print(text)
