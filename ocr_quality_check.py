@@ -12,6 +12,10 @@ import re
 
 from flair.data import Sentence
 from flair.models import SequenceTagger
+import flair, torch
+
+# Forzar a Flair a usar la CPU
+flair.device = torch.device('cpu')
 
 # Carga los modelo de lenguaje
 while True:
