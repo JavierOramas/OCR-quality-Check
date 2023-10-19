@@ -10,32 +10,50 @@ import spacy
 from collections import defaultdict
 import re
 
-def compute_non_alpha_ratio(text):
-    # Encuentra todas las palabras con caracteres no alfabéticos en medio
-    words_with_non_alpha = re.findall(r'\b\w*[^a-zA-Z0-9_]\w*\b', text)
-
-    # Encuentra todas las palabras
-    all_words = re.findall(r'\b\w+\b', text)
-
-    if len(all_words) == 0: 
-        return 0, 0
-    # Calcula y retorna el ratio
-    return len(words_with_non_alpha) / len(all_words), len(all_words)
+from flair.data import Sentence
+from flair.models import SequenceTagger
 
 # Carga los modelo de lenguaje
-try:
-    import es_core_news_lg
-    nlp_es = spacy.load('es_core_news_lg')
-except OSError:
-    import es_core_news_sm
-    nlp_es = spacy.load('es_core_news_sm')
+while True:
+    try:
+        nlp_es = spacy.load('es_core_news_lg')
+        nlp_en = spacy.load('en_core_web_lg')
+        # load tagger
+        tagger = SequenceTagger.load("flair/ner-multi")
+        break
+    except OSError:
+        import subprocess
+
+        cmd = f"python -m spacy download es_core_news_lg"
+        subprocess.check_call(cmd, shell=True)
+        cmd = f"python -m spacy download en_core_web_lg"
+        subprocess.check_call(cmd, shell=True)
+
+        
     
-def compute_legible_ratio(text, nlp):
+
+
+nlp_es.max_length = 30000000  # por ejemplo, para establecer el límite en 30,000,000 caracteres
+nlp_en.max_length = 30000000  # por ejemplo, para establecer el límite en 30,000,000 caracteres
+
+
+def compute_non_alpha_ratio(doc):
+    # Encuentra todas las palabras con caracteres no alfabéticos en medio
+    words_with_non_alpha = [token.text for token in doc if re.search(r'\b\w*[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]\w*\b', token.text)]
+    # print(words_with_non_alpha)
+    
+    if len(doc) == 0: 
+        return 0
+    # Calcula y retorna el ratio
+    return len(words_with_non_alpha) / len(doc)
+
+
+    
+def compute_legible_ratio(doc):
     # Procesamiento del texto
-    doc = nlp(text)
-    
+       
     if len(doc) == 0:
-        return 0,0
+        return 0
 
     # Contador de palabras legibles
     legible_count = 0
@@ -43,29 +61,66 @@ def compute_legible_ratio(text, nlp):
     # Revisión de cada palabra
     for token in doc:
         if token.pos_ != 'X':
+            # print(token.text, token.pos_)
             legible_count += 1
 
     # Cálculo del ratio de palabras legibles
     legible_ratio = legible_count / len(doc)
 
-    return legible_ratio, len(doc)
+    return legible_ratio
 
-def detect_entities(text):
+def detect_entities(text,engine="flair"):
+    if text == "":
+        return ""
     
-    doc = nlp_es(text)
-
     entities = {}
     
-    for ent in doc.ents:
-        if ent.text in entities:
-            if ent.label_ in entities[ent.text]:
-                entities[ent.text][ent.label_] += 1
+    if engine == "spacy":
+        doc = nlp_es(text)
+        # print("spacy")
+        for ent in doc.ents:
+            if ent.text in entities:
+                if ent.label_ in entities[ent.text]:
+                    entities[ent.text][ent.label_] += 1
+                else:
+                    entities[ent.text][ent.label_] = 1
             else:
-                entities[ent.text][ent.label_] = 1
-        else:
-            entities[ent.text] = {
-                ent.label_: 1
-            }
+                entities[ent.text] = {
+                    ent.label_: 1
+                }
+    if engine == "flair":
+        # print("flair")
+        # make example sentence in any of the four languages
+        sentence = Sentence(text)
+
+        # predict NER tags
+        tagger.predict(sentence)
+        
+        # iterate over entities and print
+        for ent in sentence.get_spans('ner'):
+            if ent.text in entities:
+                if ent.tag in entities[ent.text]:
+                    entities[ent.text][ent.tag] += 1
+                else:
+                    entities[ent.text][ent.tag] = 1
+            else:
+                entities[ent.text] = {
+                    ent.tag: 1
+                }
+
+    doc = nlp_en(text)
+    
+    for ent in doc.ents:
+        if ent.label_ in ["DATE", "TIME"]:
+            if ent.text in entities:
+                if ent.label_ in entities[ent.text]:
+                    entities[ent.text][ent.label_] += 1
+                else:
+                    entities[ent.text][ent.label_] = 1
+            else:
+                entities[ent.text] = {
+                    ent.label_: 1
+                }
             
     return entities
 
@@ -73,15 +128,30 @@ def detect_entities(text):
 # text = "Esto es un texto de ejemplo con algunas paabras mal escr\itas."
 
 def compute_document(text):
-    legible_ratio_es, detected_legible = compute_legible_ratio(text, nlp_es)
+    
+    doc = nlp_es(text)
+    
+    
+    legible_ratio_es = compute_legible_ratio(doc)
     
     # print(f"Ratio de palabras reconocidas: {legible_ratio_es}")
     
     # Cálculo del ratio de palabras con caracteres no alfabéticos
-    non_alpha_ratio, detected_alpha = compute_non_alpha_ratio(text)
+    non_alpha_ratio = compute_non_alpha_ratio(doc)
     
     detected_entities = detect_entities(text)
 
     # print(f"Ratio de palabas con carácteres no alfanúmericos: {non_alpha_ratio}")
 
-    return legible_ratio_es, detected_legible, non_alpha_ratio, detected_alpha, detected_entities
+    return legible_ratio_es, non_alpha_ratio, len(doc), detected_entities
+
+
+if __name__ == "__main__":
+    
+    from pdf_handler import get_ocr
+            
+    text = get_ocr('rddm/FCE_0001_01529.pdf')
+    legible_ratio_es, non_alpha_ratio, num_tokens, detected_entities = compute_document(text)
+    doc = nlp_es(text)
+    tokens = [token.text for token in doc]
+    

@@ -33,5 +33,5 @@ def get_ocr(pdf_file_path):
     return extracted_text
 
 if __name__ == "__main__":
-    text = extract_text_from_pdf('notas IBERO/IBNP2017102501.pdf')
+    text = extract_text_from_pdf('rddm/FCE_0001_02564.pdf')
     print(text)

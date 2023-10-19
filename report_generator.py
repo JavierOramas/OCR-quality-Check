@@ -12,8 +12,7 @@ def generate_excel_summary(raw_report_data, excel_file_path="summary.xlsx"):
     for path, info in raw_report_data.items():
         legible_ratio = info['legible_ratio_es']  
         alpha_ratio = info['non_alpha_ratio']
-        detected_words_legible = info['detected_words_legible']
-        detected_words_alpha = info['detected_words_alpha']
+        num_tokens = info['num_tokens']
         detected_entities = info['detected_entities']
 
         # Check and update the summary count
@@ -41,9 +40,8 @@ def generate_excel_summary(raw_report_data, excel_file_path="summary.xlsx"):
 
         record = {'ruta': path, 
                   'palabras legibles': legible_ratio, 
-                  'palabras legibles no alfanuméricas': alpha_ratio, 
-                  "conteo legible": detected_words_legible, 
-                  "conteo no alfanumerico": detected_words_alpha,
+                  'palabras no alfanuméricas': alpha_ratio, 
+                  "cantidad de palabras": num_tokens,
                   "entidades detectades": detected_entities
                   }
         records.append(record)
