@@ -19,7 +19,7 @@ def process_single_pdf(pdf_path:str):
 
 def process_pdf_files(path):
     data = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         futures = []
         for folder, _, files in os.walk(path):
             with tqdm.tqdm(total=len(files), desc="Processing Files", unit="files") as pbar:

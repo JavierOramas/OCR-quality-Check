@@ -40,6 +40,25 @@ while True:
 nlp_es.max_length = 30000000  # por ejemplo, para establecer el límite en 30,000,000 caracteres
 nlp_en.max_length = 30000000  # por ejemplo, para establecer el límite en 30,000,000 caracteres
 
+def sliding_window(text, window_size, overlap):
+    """
+    Divide el texto en chunks utilizando una ventana deslizable.
+    
+    Args:
+    - text (str): El texto a dividir.
+    - window_size (int): Tamaño del chunk.
+    - overlap (int): Cantidad de caracteres de solapamiento entre chunks consecutivos.
+
+    Returns:
+    - List[str]: Lista de chunks.
+    """
+    chunks = []
+    start_idx = 0
+    while start_idx < len(text):
+        end_idx = start_idx + window_size
+        chunks.append(text[start_idx:end_idx])
+        start_idx = end_idx - overlap
+    return chunks
 
 def compute_non_alpha_ratio(doc):
     # Encuentra todas las palabras con caracteres no alfabéticos en medio
@@ -95,10 +114,12 @@ def detect_entities(text,engine="flair"):
     if engine == "flair":
         # print("flair")
         # make example sentence in any of the four languages
-        sentence = Sentence(text)
-
-        # predict NER tags
-        tagger.predict(sentence)
+        
+        chunks = sliding_window(text, window_size=1000, overlap=200)
+        
+        for chunk in chunks:
+            sentence = Sentence(chunk)
+            tagger.predict(sentence)
         
         # iterate over entities and print
         for ent in sentence.get_spans('ner'):
