@@ -90,16 +90,22 @@ def compute_legible_ratio(doc):
     # Cálculo del ratio de palabras legibles
     legible_ratio = legible_count / len(doc)
 
-    return legible_ratio
+    return float(legible_ratio)
 
-def detect_entities(text,engine="flair"):
+def clean_text(text):
+    text = re.sub(r'\s*\n\s*', ' ', text)  # Eliminar saltos de línea y espacios adicionales
+    text = re.sub(r'\s{2,}', ' ', text)    # Eliminar espacios dobles
+    return text.strip()
+
+
+def detect_entities(text,engine="spacy"):
     if text == "":
         return ""
     
     entities = {}
     
     if engine == "spacy":
-        doc = nlp_es(text)
+        doc = nlp_es(clean_text(text))
         # print("spacy")
         for ent in doc.ents:
             if ent.text in entities:
@@ -175,8 +181,9 @@ if __name__ == "__main__":
     
     from pdf_handler import get_ocr
             
-    text = get_ocr('rddm/FCE_0001_01529.pdf')
+    text = get_ocr('notas IBERO/IBNP2009021301.pdf')
     legible_ratio_es, non_alpha_ratio, num_tokens, detected_entities = compute_document(text)
     doc = nlp_es(text)
     tokens = [token.text for token in doc]
+    print(detected_entities)
     
